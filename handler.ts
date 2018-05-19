@@ -18,7 +18,12 @@ export const getSlides: Handler = (event: APIGatewayEvent, context: Context, cb:
     let data = '';
 
     // A chunk of data has been recieved.
-    resp.on('data', (data) => {
+    resp.on('data', (chunk) => {
+      data += chunk;
+    });
+
+    // The whole response has been received. Print out the result.
+    resp.on('end', () => {
       const response = {
         statusCode: 200,
         body: convert.xml2json(data, {compact: true, spaces: 4}),
@@ -29,11 +34,6 @@ export const getSlides: Handler = (event: APIGatewayEvent, context: Context, cb:
       };
     
       cb(null, response);
-    });
-
-    // The whole response has been received. Print out the result.
-    resp.on('end', (end) => {
-      console.log("END", end);
     });
  
   }).on("error", (err) => {
