@@ -2,6 +2,7 @@ import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
 
 const https = require('https');
 const  convert = require('xml-js');
+const mediumJSONFeed = require('medium-json-feed');
 
 export const getSlides: Handler = (event: APIGatewayEvent, context: Context, cb: Callback) => {
 
@@ -52,4 +53,38 @@ export const getSlides: Handler = (event: APIGatewayEvent, context: Context, cb:
   });
 
   
+}
+
+
+export const getMediumPosts: Handler = (event: APIGatewayEvent, context: Context, cb: Callback) => {
+  let queryParams = event.queryStringParameters;
+  mediumJSONFeed(queryParams.mediumUsername)
+  .then(data => {
+    console.log("MEDIUM POSTS", data);
+    const response = {
+      statusCode: data.status,
+      body: JSON.stringify(data.response),
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      }
+    };
+  
+    cb(null, response);
+  })
+  .catch(error => {
+    console.log("MEDIUM ERROR", error);
+    const response = {
+      statusCode: error.status,
+      body: JSON.stringify({
+        message: "Can not get posts",
+      }),
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      }
+    };
+  
+    cb(null, response);
+  });
 }
