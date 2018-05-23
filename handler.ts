@@ -59,7 +59,7 @@ export const getMediumPosts: Handler = (event: APIGatewayEvent, context: Context
   const url = `https://medium.com/${queryParams.mediumUsername}/latest?format=json`;
 
   https.get(url, (resp) => {
-    let data = '';
+    let data: any;
 
     // A chunk of data has been recieved.
     resp.on('data', (chunk) => {
@@ -70,6 +70,13 @@ export const getMediumPosts: Handler = (event: APIGatewayEvent, context: Context
     resp.on('end', () => {
       data = data.substr(data.indexOf('{'));
       data = JSON.parse(data) || {};
+
+      if (data && data.payload) {
+        data = JSON.stringify(data.payload);
+      } else {
+        data = JSON.stringify({});
+      }
+
       const response = {
         statusCode: 200,
         body: data,
