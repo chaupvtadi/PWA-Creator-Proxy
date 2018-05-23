@@ -2,7 +2,6 @@ import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
 
 const https = require('https');
 const  convert = require('xml-js');
-const mediumJSONFeed = require('medium-json-feed');
 
 export const getSlides: Handler = (event: APIGatewayEvent, context: Context, cb: Callback) => {
 
@@ -55,29 +54,39 @@ export const getSlides: Handler = (event: APIGatewayEvent, context: Context, cb:
   
 }
 
-
 export const getMediumPosts: Handler = (event: APIGatewayEvent, context: Context, cb: Callback) => {
   let queryParams = event.queryStringParameters;
-  mediumJSONFeed(queryParams.mediumUsername)
-  .then(data => {
-    console.log("MEDIUM POSTS", data);
+  const url = `https://medium.com/${queryParams.mediumUsername}/latest?format=json`;
+
+  https.get(url, (resp) => {
+    let data = '';
+
+    // A chunk of data has been recieved.
+    resp.on('data', (chunk) => {
+      data += chunk;
+    });
+
+    // The whole response has been received. Print out the result.
+    resp.on('end', () => {
+      data = data.substr(data.indexOf('{'));
+      data = JSON.parse(data) || {};
+      const response = {
+        statusCode: 200,
+        body: data,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json'
+        }
+      };
+    
+      cb(null, response);
+    });
+ 
+  }).on("error", (err) => {
     const response = {
-      statusCode: data.status,
-      body: JSON.stringify(data.response),
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      }
-    };
-  
-    cb(null, response);
-  })
-  .catch(error => {
-    console.log("MEDIUM ERROR", error);
-    const response = {
-      statusCode: error.status,
+      statusCode: err.statusCode,
       body: JSON.stringify({
-        message: "Can not get posts",
+        message: err.message,
       }),
       headers: {
         'Access-Control-Allow-Origin': '*',
