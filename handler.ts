@@ -1,18 +1,21 @@
 import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
+import { environment } from './evironment';
 
 const https = require('https');
-const  convert = require('xml-js');
+const convert = require('xml-js');
+const sha1 = require('sha1');
 
 export const getSlides: Handler = (event: APIGatewayEvent, context: Context, cb: Callback) => {
 
   let queryParams = event.queryStringParameters;
+  let ts = Math.round((new Date()).getTime() / 1000);
+  let api_key = environment.slideshare.api_key;
+  let hash = sha1(environment.slideshare.secret_key + ts);
 
   let url = 'https://www.slideshare.net/api/2/get_slideshows_by_user?username_for=' + queryParams.username_for
-  + '&ts=' + queryParams.ts
-  + '&api_key=' + queryParams.api_key
-  + '&hash=' + queryParams.hash;
-
-  console.log("URL is ", url);
+  + '&ts=' + ts
+  + '&api_key=' + api_key
+  + '&hash=' + hash;
 
   https.get(url, (resp) => {
     let data = '';
